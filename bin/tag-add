@@ -1,0 +1,37 @@
+#! /home/orange/pyenv/bin/python -B
+
+import argparse
+from toloveyou import *
+
+@with_cursor
+def main(cursor=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tag', nargs='?') 
+    parser.add_argument('input', nargs='*', default=parse_stdin()) 
+    args = parser.parse_args()
+
+    if args.tag is None:
+        output = subprocess.run(
+            ['rofi', '-dmenu', '-p', 'tag-add'],
+            input='',
+            text=True, 
+            capture_output=True,
+        ).stdout.strip()
+        
+        if not output: # pressed esc usually
+            sys.exit()
+
+        args.tag = output.strip().lower()
+    
+    args.tag = args.tag.strip().lower()
+
+    for entry, attrs in parse(args.input, cursor=cursor):
+        attrs.setdefault('tags', [])
+
+        if args.tag not in attrs['tags']:
+            attrs['tags'].append(args.tag)
+
+        save_attrs(entry, attrs, cursor=cursor)
+        
+if __name__ == '__main__':
+    main()

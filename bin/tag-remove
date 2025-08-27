@@ -1,0 +1,24 @@
+#! /home/orange/pyenv/bin/python -B
+
+import argparse
+from toloveyou import *
+
+@with_cursor
+def main(cursor=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tag') 
+    parser.add_argument('input', nargs='*', default=parse_stdin()) 
+    args = parser.parse_args()
+
+    args.tag = args.tag.strip().lower()
+
+    for entry, attrs in parse(args.input, cursor=cursor):
+        if args.tag not in attrs.get('tags', []):
+            continue 
+
+        attrs['tags'].remove(args.tag)
+
+        save_attrs(entry, attrs, cursor=cursor)
+        
+if __name__ == '__main__':
+    main()

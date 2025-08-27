@@ -1,0 +1,41 @@
+#! /home/orange/pyenv/bin/python -B
+
+import math
+import argparse
+
+from toloveyou import *
+
+@with_cursor
+def main(cursor=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('suffix', nargs='?', default='')
+    args = parser.parse_args()
+    
+    if args.suffix and not args.suffix.startswith('.'):
+        args.suffix = '.' + args.suffix
+
+    entry = entry_()
+    path = COLL / (entry + args.suffix)
+    path.touch()
+    
+    attrs = default_attrs()
+    attrs['path'] = relative_to_coll(path)
+    attrs['scheduler'] = 'catch'
+    save_attrs(entry, attrs, cursor=cursor)
+    
+    # inherit prioriy from window (if possible) 
+    window_entry, window_attrs = resolve_window()
+    if window_entry is None or window_attrs.get('priority', None) is None:
+        init_priority(entry, attrs, cursor=cursor)
+    else:
+        index = window_attrs['priority']
+        index = math.ceil(index * random.uniform(0.5, 1.5))
+        index = max(0, index)
+        insert_('priority', entry, index, cursor=cursor)
+
+    print(path)
+    
+if __name__ == '__main__':
+    main()
+
+    
