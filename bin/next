@@ -1,5 +1,6 @@
 #! /home/orange/pyenv/bin/python -B
 
+import sys
 import random
 import argparse
 import subprocess
@@ -24,6 +25,7 @@ def next_(entry, attrs):
 @with_cursor
 def main(cursor=None):
     parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prefix_chars='+')
     parser.add_argument('tags', nargs='*') 
     args = parser.parse_args()
 
@@ -35,16 +37,23 @@ def main(cursor=None):
     if not subset:
         subset = outstanding_priority_sort(cursor=cursor)
 
-    # TODO if subset is empty: make all "topics" that are due tomorrow to today
-    # or figure out some kind of way to "postpone" items.
-    # (only topics, not "items")
-
     if random.random() < 0.33:  # 1 in x chance
         random.shuffle(subset)
 
     for entry, attrs in parse(subset, cursor=cursor):
-        next_(entry, attrs) 
-        break 
+        tags = attrs.get('tags', []) # lazy tag filtering
+                                     # TODO make not lazy
+        
+        exclude_tags = {tag[1:] for tag in args.tags if tag.startswith('-')}
+        include_tags = {tag for tag in args.tags if not tag.startswith('-')}
+    
+        if any(tag in tags for tag in exclude_tags):
+            continue
+        if not include_tags.issubset(tags):
+            continue
+
+        next_(entry, attrs)
+        break
 
 if __name__ == '__main__':
     main()

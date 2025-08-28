@@ -7,13 +7,14 @@ from toloveyou import *
 def main(cursor=None):
     parser = argparse.ArgumentParser()
     parser = argparse.ArgumentParser(prefix_chars='+')
-    parser.add_argument('tag', nargs='?') 
-    parser.add_argument('input', nargs='*', default=parse_stdin()) 
+    parser.add_argument('tags', nargs='*') 
     args = parser.parse_args()
 
-    if args.tag is None:
+    stdin = parse_stdin()
+
+    if not args.tags:
         output = subprocess.run(
-            ['rofi', '-dmenu', '-p', 'tag'],
+            ['rofi', '-dmenu', '-p', 'tags'],
             input='',
             text=True, 
             capture_output=True,
@@ -22,19 +23,20 @@ def main(cursor=None):
         if not output: # pressed esc usually
             sys.exit()
 
-        args.tag = output.strip().lower()
+        args.tags = output.strip().lower().split(' ')
     
-    args.tag = args.tag.strip().lower()
-    remove = args.tag.startswith('-')
-
-    for entry, attrs in parse(args.input, cursor=cursor):
+    for entry, attrs in parse(stdin, cursor=cursor):
         attrs.setdefault('tags', [])
         tags = set(attrs['tags'])
+        
+        for tag in args.tags: 
+            tag = tag.strip().lower()
+            remove = tag.startswith('-')
 
-        if remove:
-            tags.remove(args.tag[1:])
-        else:
-            tags.add(args.tag)
+            if remove:
+                tags.discard(tag[1:])
+            else:
+                tags.add(tag)
 
         attrs['tags'] = list(tags)
         save_attrs(entry, attrs, cursor=cursor)
